@@ -1,0 +1,2 @@
+Original source commit: 7b8428ecf48f28613b5aaac914ad1268086cbd1d
+Source files match the published prototype snapshot; developer handoff notes added.
