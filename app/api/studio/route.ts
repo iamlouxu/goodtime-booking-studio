@@ -1,6 +1,13 @@
 import { env } from "cloudflare:workers";
 import { getChatGPTUser } from "../../chatgpt-auth";
 
+type ShopRow = {
+  id: string;
+  name: string;
+  description: string;
+  theme?: string | null;
+};
+
 const fail = (message: string, status = 400) =>
   Response.json({ error: message }, { status });
 
@@ -9,6 +16,17 @@ const db = () => {
   return env.DB;
 };
 
+let themeColEnsured = false;
+async function ensureThemeColumn() {
+  if (themeColEnsured) return;
+  try {
+    await db().prepare("ALTER TABLE shops ADD COLUMN theme text").run();
+  } catch {
+    // Column already exists
+  }
+  themeColEnsured = true;
+}
+
 const nowLocal = () =>
   new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 16);
 
@@ -16,8 +34,12 @@ const validDate = (d: string) =>
   /^\d{4}-\d{2}-\d{2}$/.test(d) &&
   new Date(d + "T00:00:00Z").toISOString().slice(0, 10) === d;
 
+const validHex = (c: unknown): c is string =>
+  typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c.trim());
+
 export async function GET(req: Request) {
   try {
+    await ensureThemeColumn();
     const u = new URL(req.url);
     const id = u.searchParams.get("shop");
     const month = u.searchParams.get("month");
@@ -26,34 +48,34 @@ export async function GET(req: Request) {
       return fail("月份格式不正確");
     }
 
-    let shop: any;
+    let shop: ShopRow | null = null;
     let owner = false;
 
     if (id) {
       if (id === "default") {
         shop = await db()
-          .prepare("SELECT id, name, description FROM shops LIMIT 1")
-          .first();
+          .prepare("SELECT id, name, description, theme FROM shops LIMIT 1")
+          .first<ShopRow>();
       } else {
         shop = await db()
-          .prepare("SELECT id, name, description FROM shops WHERE id = ?")
+          .prepare("SELECT id, name, description, theme FROM shops WHERE id = ?")
           .bind(id)
-          .first();
+          .first<ShopRow>();
       }
     } else {
       const user = await getChatGPTUser();
       if (!user) return fail("請先登入", 401);
 
       shop = await db()
-        .prepare("SELECT id, name, description FROM shops WHERE owner = ?")
+        .prepare("SELECT id, name, description, theme FROM shops WHERE owner = ?")
         .bind(user.userId)
-        .first();
+        .first<ShopRow>();
 
       // Fallback: if single-studio mode and a shop already exists, bind/use it
       if (!shop) {
         shop = await db()
-          .prepare("SELECT id, name, description FROM shops LIMIT 1")
-          .first();
+          .prepare("SELECT id, name, description, theme FROM shops LIMIT 1")
+          .first<ShopRow>();
       }
       owner = true;
     }
@@ -85,6 +107,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    await ensureThemeColumn();
     const origin = req.headers.get("origin");
     if (origin && origin !== new URL(req.url).origin) {
       return fail("來源不符", 403);
@@ -160,13 +183,13 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    let shop: any = await db()
+    let shop = await db()
       .prepare("SELECT id FROM shops WHERE owner = ?")
       .bind(user.userId)
-      .first();
+      .first<{ id: string }>();
 
     if (!shop) {
-      shop = await db().prepare("SELECT id FROM shops LIMIT 1").first();
+      shop = await db().prepare("SELECT id FROM shops LIMIT 1").first<{ id: string }>();
     }
     if (!shop) return fail("請先建立工作室", 404);
 
@@ -181,6 +204,29 @@ export async function POST(req: Request) {
         .bind(name, desc, shop.id)
         .run();
       return Response.json({ ok: true });
+    }
+
+    if (b.action === "theme") {
+      const t = b.theme;
+      if (
+        !t ||
+        typeof t !== "object" ||
+        !validHex(t.primary) ||
+        !validHex(t.accent) ||
+        !validHex(t.bg)
+      ) {
+        return fail("請提供有效的 HEX 顏色格式（#RRGGBB）");
+      }
+      const themeJson = JSON.stringify({
+        primary: t.primary.toLowerCase(),
+        accent: t.accent.toLowerCase(),
+        bg: t.bg.toLowerCase(),
+      });
+      await db()
+        .prepare("UPDATE shops SET theme = ? WHERE id = ?")
+        .bind(themeJson, shop.id)
+        .run();
+      return Response.json({ ok: true, theme: themeJson });
     }
 
     if (b.action === "add") {
