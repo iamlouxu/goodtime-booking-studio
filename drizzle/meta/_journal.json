@@ -8,6 +8,13 @@
       "when": 1793277577025,
       "tag": "0000_parallel_starbolt",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794484769036,
+      "tag": "0001_faithful_azazel",
+      "breakpoints": true
     }
   ]
 }

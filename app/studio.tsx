@@ -30,6 +30,8 @@ import {
   Search,
   SlidersHorizontal,
   ChevronDown,
+  Palette,
+  RotateCcw,
 } from 'lucide-react';
 
 type Slot = {
@@ -47,8 +49,16 @@ type Shop = {
   id: string;
   name: string;
   description: string;
+  theme?: string | null;
 };
 
+type ThemeColors = {
+  primary: string;
+  accent: string;
+  bg: string;
+};
+
+type ThemeSlotKey = keyof ThemeColors;
 type TabKey = 'calendar' | 'requests' | 'poster' | 'settings';
 type ApiPayload = Record<string, unknown>;
 type ApiResponse = {
@@ -56,7 +66,243 @@ type ApiResponse = {
   shop?: Shop | null;
   slots?: Slot[];
   bookingId?: string;
+  theme?: string;
 };
+
+const DEFAULT_THEME: ThemeColors = {
+  primary: '#1f4d3a',
+  accent: '#f2bac9',
+  bg: '#faf6ee',
+};
+
+const THEME_PRESETS: { name: string; subtitle: string; colors: ThemeColors }[] = [
+  {
+    name: '松綠薔薇（預設）',
+    subtitle: '復古俱樂部松綠 × 嫩粉紅',
+    colors: { primary: '#1f4d3a', accent: '#f2bac9', bg: '#faf6ee' },
+  },
+  {
+    name: '濃縮拿鐵',
+    subtitle: '韓系溫柔可可 × 燕麥奶杏',
+    colors: { primary: '#523a28', accent: '#e8c5b0', bg: '#fbf7f2' },
+  },
+  {
+    name: '午夜奶油',
+    subtitle: '摩登皇家藍 × 奶油鵝黃',
+    colors: { primary: '#1e325c', accent: '#f3d97d', bg: '#f8f7f2' },
+  },
+  {
+    name: '勃艮第玫瑰',
+    subtitle: '法式酒紅 × 乾燥玫瑰粉',
+    colors: { primary: '#5e2129', accent: '#f2c2cb', bg: '#faf5f5' },
+  },
+  {
+    name: '宇治焙茶',
+    subtitle: '日系抹茶綠 × 暖杏奶茶',
+    colors: { primary: '#38523f', accent: '#e6cca5', bg: '#f9f6ef' },
+  },
+  {
+    name: '暮光紫羅蘭',
+    subtitle: '優雅深梅紫 × 薰衣草粉',
+    colors: { primary: '#3b2854', accent: '#dec4f2', bg: '#f9f6fc' },
+  },
+];
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n));
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '').trim();
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return [31, 77, 58];
+  return [
+    parseInt(clean.slice(0, 2), 16),
+    parseInt(clean.slice(2, 4), 16),
+    parseInt(clean.slice(4, 6), 16),
+  ];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return (
+    '#' +
+    [r, g, b]
+      .map((v) => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+
+function mixHex(hex1: string, hex2: string, weight1: number): string {
+  const [r1, g1, b1] = hexToRgb(hex1);
+  const [r2, g2, b2] = hexToRgb(hex2);
+  const w = clamp(weight1, 0, 1);
+  return rgbToHex(
+    r1 * w + r2 * (1 - w),
+    g1 * w + g2 * (1 - w),
+    b1 * w + b2 * (1 - w),
+  );
+}
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case rn:
+        h = (gn - bn) / d + (gn < bn ? 6 : 0);
+        break;
+      case gn:
+        h = (bn - rn) / d + 2;
+        break;
+      default:
+        h = (rn - gn) / d + 4;
+    }
+    h /= 6;
+  }
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const hn = ((h % 360) + 360) % 360;
+  const sn = clamp(s, 0, 100) / 100;
+  const ln = clamp(l, 0, 100) / 100;
+  const c = (1 - Math.abs(2 * ln - 1)) * sn;
+  const x = c * (1 - Math.abs(((hn / 60) % 2) - 1));
+  const m = ln - c / 2;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (hn < 60) [r, g, b] = [c, x, 0];
+  else if (hn < 120) [r, g, b] = [x, c, 0];
+  else if (hn < 180) [r, g, b] = [0, c, x];
+  else if (hn < 240) [r, g, b] = [0, x, c];
+  else if (hn < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+}
+
+function hexToHsv(hex: string): [number, number, number] {
+  const [r, g, b] = hexToRgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0;
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+  if (max !== min) {
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      default:
+        h = (r - g) / d + 4;
+    }
+    h /= 6;
+  }
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(v * 100)];
+}
+
+function hsvToHex(h: number, s: number, v: number): string {
+  const hn = ((h % 360) + 360) % 360;
+  const sn = clamp(s, 0, 100) / 100;
+  const vn = clamp(v, 0, 100) / 100;
+  const c = vn * sn;
+  const x = c * (1 - Math.abs(((hn / 60) % 2) - 1));
+  const m = vn - c;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (hn < 60) [r, g, b] = [c, x, 0];
+  else if (hn < 120) [r, g, b] = [x, c, 0];
+  else if (hn < 180) [r, g, b] = [0, c, x];
+  else if (hn < 240) [r, g, b] = [0, x, c];
+  else if (hn < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+}
+
+function derivePalette(theme: ThemeColors) {
+  const [ph, ps, pl] = rgbToHsl(...hexToRgb(theme.primary));
+  const [ah, as, al] = rgbToHsl(...hexToRgb(theme.accent));
+
+  const green = theme.primary;
+  const greenHover = hslToHex(ph, ps, clamp(pl - 7, 8, 85));
+  const greenMid = hslToHex(ph, clamp(ps, 25, 80), clamp(pl + 11, 24, 62));
+  const greenSoft = mixHex(theme.primary, '#ffffff', 0.13);
+  const greenDarkest = hslToHex(ph, clamp(ps + 5, 25, 85), clamp(pl - 8, 10, 22));
+
+  const pink = theme.accent;
+  const pinkHover = hslToHex(ah, clamp(as + 6, 20, 95), clamp(al - 7, 18, 88));
+  const pinkSoft = mixHex(theme.accent, '#ffffff', 0.18);
+  const pinkBorder = mixHex(theme.accent, '#ffffff', 0.45);
+  const pinkDeep = hslToHex(ah, clamp(as + 15, 48, 85), clamp(al, 30, 40));
+
+  const cream = theme.bg;
+  const bg = mixHex(theme.primary, theme.bg, 0.045);
+  const ink = hslToHex(ph, clamp(ps, 18, 38), 13);
+  const muted = hslToHex(ph, clamp(ps, 8, 18), 44);
+  const border = mixHex(theme.primary, '#edf0ee', 0.1);
+
+  return {
+    '--green': green,
+    '--green-hover': greenHover,
+    '--green-mid': greenMid,
+    '--green-soft': greenSoft,
+    '--green-darkest': greenDarkest,
+    '--pink': pink,
+    '--pink-hover': pinkHover,
+    '--pink-soft': pinkSoft,
+    '--pink-border': pinkBorder,
+    '--pink-deep': pinkDeep,
+    '--cream': cream,
+    '--bg': bg,
+    '--ink': ink,
+    '--muted': muted,
+    '--border': border,
+  };
+}
+
+function applyThemeToDocument(theme: ThemeColors) {
+  if (typeof document === 'undefined') return;
+  const vars = derivePalette(theme);
+  const root = document.documentElement;
+  Object.entries(vars).forEach(([k, v]) => {
+    root.style.setProperty(k, v);
+  });
+}
+
+function parseShopTheme(raw?: string | null): ThemeColors {
+  if (!raw) return DEFAULT_THEME;
+  try {
+    const parsed = JSON.parse(raw) as Partial<ThemeColors>;
+    if (
+      parsed &&
+      typeof parsed.primary === 'string' &&
+      /^#[0-9a-fA-F]{6}$/.test(parsed.primary) &&
+      typeof parsed.accent === 'string' &&
+      /^#[0-9a-fA-F]{6}$/.test(parsed.accent) &&
+      typeof parsed.bg === 'string' &&
+      /^#[0-9a-fA-F]{6}$/.test(parsed.bg)
+    ) {
+      return {
+        primary: parsed.primary.toLowerCase(),
+        accent: parsed.accent.toLowerCase(),
+        bg: parsed.bg.toLowerCase(),
+      };
+    }
+  } catch {}
+  return DEFAULT_THEME;
+}
 
 const statuses: Record<string, string> = {
   open: '可預約',
@@ -83,7 +329,7 @@ const tabDescriptions: Record<TabKey, string> = {
   calendar: '預約、空檔與日常，在這裡一目了然。',
   requests: '確認客人的預約，讓下一次相遇如期而至。',
   poster: '選一張喜歡的照片，讓月曆成為下一篇貼文。',
-  settings: '設定工作室資訊，分享專屬於你的預約入口。',
+  settings: '設定工作室資訊、專屬預約連結與品牌主題配色。',
 };
 
 const actionMessages: Record<string, string> = {
@@ -387,9 +633,26 @@ export default function Studio({
   const [success, setSuccess] = useState<{ bookingId: string } | null>(null);
   const [lastSync, setLastSync] = useState('');
   const [requestFilter, setRequestFilter] = useState('pending');
+  const [theme, setTheme] = useState<ThemeColors>(DEFAULT_THEME);
 
   const loading = useRef(false);
   const monthRef = useRef(month);
+  const editingThemeRef = useRef(false);
+
+  useEffect(() => {
+    const cacheKey = `goodtime_theme_${shopId || 'owner'}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = parseShopTheme(cached);
+        applyThemeToDocument(parsed);
+      }
+    } catch {}
+  }, [shopId]);
+
+  useEffect(() => {
+    applyThemeToDocument(theme);
+  }, [theme]);
 
   const refresh = useCallback(async () => {
     if (!signedIn && !customer) return;
@@ -409,6 +672,22 @@ export default function Studio({
       if (monthRef.current !== month) return;
       setShop(j.shop);
       setSlots(j.slots);
+      if (j.shop && !editingThemeRef.current) {
+        const nextTheme = parseShopTheme(j.shop.theme);
+        setTheme((prev) =>
+          prev.primary === nextTheme.primary &&
+          prev.accent === nextTheme.accent &&
+          prev.bg === nextTheme.bg
+            ? prev
+            : nextTheme,
+        );
+        try {
+          localStorage.setItem(
+            `goodtime_theme_${shopId || 'owner'}`,
+            JSON.stringify(nextTheme),
+          );
+        } catch {}
+      }
       setError('');
       setLoaded(true);
       setLastSync(
@@ -550,7 +829,7 @@ export default function Studio({
                   { action: 'create', name: newName },
                   '工作室已建立，來新增第一個時段吧',
                 );
-              } catch { }
+              } catch {}
             }}
           >
             <label>
@@ -1266,17 +1545,17 @@ export default function Studio({
                     (s) =>
                       requestFilter === 'all' || s.status === requestFilter,
                   ) && (
-                      <div className="empty">
-                        <CheckCircle2 size={36} strokeWidth={1.2} />
-                        <h3>
-                          目前沒有
-                          {requestFilter === 'all'
-                            ? '時段'
-                            : statuses[requestFilter] + '預約'}
-                        </h3>
-                        <p>新增開放時段並分享連結，就能開始接收預約。</p>
-                      </div>
-                    )}
+                    <div className="empty">
+                      <CheckCircle2 size={36} strokeWidth={1.2} />
+                      <h3>
+                        目前沒有
+                        {requestFilter === 'all'
+                          ? '時段'
+                          : statuses[requestFilter] + '預約'}
+                      </h3>
+                      <p>新增開放時段並分享連結，就能開始接收預約。</p>
+                    </div>
+                  )}
                 </div>
               </section>
             </>
@@ -1288,12 +1567,35 @@ export default function Studio({
               month={month}
               setMonth={editMonth}
               slots={slots}
+              theme={theme}
               notify={setToast}
             />
           )}
 
           {tab === 'settings' && (
             <div className="settings-grid">
+              <ThemeStudioCard
+                theme={theme}
+                setTheme={setTheme}
+                busy={busy}
+                onEditingChange={(editing) => {
+                  editingThemeRef.current = editing;
+                }}
+                onSave={async (nextTheme) => {
+                  editingThemeRef.current = false;
+                  await act(
+                    { action: 'theme', theme: nextTheme },
+                    '品牌配色已儲存，客人預約頁與製圖已同步更新',
+                  );
+                  try {
+                    localStorage.setItem(
+                      `goodtime_theme_${shopId || 'owner'}`,
+                      JSON.stringify(nextTheme),
+                    );
+                  } catch {}
+                }}
+              />
+
               <section className="card settings-card">
                 <span className="eyebrow">STUDIO PROFILE</span>
                 <h2>工作室資訊</h2>
@@ -1312,7 +1614,7 @@ export default function Studio({
                         },
                         '工作室資訊已儲存',
                       );
-                    } catch { }
+                    } catch {}
                   }}
                 >
                   <label>
@@ -1399,7 +1701,7 @@ export default function Studio({
                   '開放時段已新增',
                 );
                 setModal(false);
-              } catch { }
+              } catch {}
             }}
           >
             <p className="muted">只需開始時間，每個時間點接受一位客人。</p>
@@ -1460,6 +1762,266 @@ export default function Studio({
   );
 }
 
+function ThemeStudioCard({
+  theme,
+  setTheme,
+  busy,
+  onEditingChange,
+  onSave,
+}: {
+  theme: ThemeColors;
+  setTheme: (t: ThemeColors) => void;
+  busy: boolean;
+  onEditingChange: (editing: boolean) => void;
+  onSave: (t: ThemeColors) => Promise<void>;
+}) {
+  const [activeSlot, setActiveSlot] = useState<ThemeSlotKey>('primary');
+  const currentHex = theme[activeSlot];
+  const [hsv, setHsv] = useState<[number, number, number]>(() =>
+    hexToHsv(currentHex),
+  );
+  const [hexDraft, setHexDraft] = useState(currentHex);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+
+  function selectSlot(slot: ThemeSlotKey) {
+    setActiveSlot(slot);
+    setHsv(hexToHsv(theme[slot]));
+    setHexDraft(theme[slot]);
+  }
+
+  function updateActiveColor(nextHex: string, nextHsv?: [number, number, number]) {
+    onEditingChange(true);
+    const normalized = nextHex.toLowerCase();
+    const updated = { ...theme, [activeSlot]: normalized };
+    setTheme(updated);
+    setHexDraft(normalized);
+    if (nextHsv) setHsv(nextHsv);
+  }
+
+  function updateFromBoardEvent(clientX: number, clientY: number) {
+    const el = boardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const s = clamp(((clientX - rect.left) / rect.width) * 100, 0, 100);
+    const v = clamp(100 - ((clientY - rect.top) / rect.height) * 100, 0, 100);
+    const nextHsv: [number, number, number] = [
+      hsv[0],
+      Math.round(s),
+      Math.round(v),
+    ];
+    const nextHex = hsvToHex(nextHsv[0], nextHsv[1], nextHsv[2]);
+    updateActiveColor(nextHex, nextHsv);
+  }
+
+  function applyWholeTheme(next: ThemeColors) {
+    onEditingChange(true);
+    setTheme(next);
+    setHsv(hexToHsv(next[activeSlot]));
+    setHexDraft(next[activeSlot]);
+  }
+
+  const slotLabels: { key: ThemeSlotKey; label: string; desc: string }[] = [
+    { key: 'primary', label: '① 主色調', desc: '主按鈕・選單・表頭' },
+    { key: 'accent', label: '② 點綴色', desc: '標籤・徽章・條紋' },
+    { key: 'bg', label: '③ 背景底色', desc: '工作區・預約頁底色' },
+  ];
+
+  const derived = derivePalette(theme);
+
+  return (
+    <section className="card settings-card theme-studio-card">
+      <span className="eyebrow">BRAND COLOR PALETTE · 品牌主題調色盤</span>
+      <h2>自訂工作室專屬配色</h2>
+      <p className="muted">
+        點選下方 3 個核心色槽並拖曳調色盤，系統會自動推算深淺延伸色，並同步套用至管理後台、客人預約頁與 IG 空檔時刻表。
+      </p>
+
+      <div className="theme-studio-layout">
+        <div>
+          <div className="theme-slots">
+            {slotLabels.map((s) => (
+              <button
+                type="button"
+                key={s.key}
+                className={`theme-slot-btn ${activeSlot === s.key ? 'active' : ''}`}
+                onClick={() => selectSlot(s.key)}
+              >
+                <span
+                  className="theme-slot-swatch"
+                  style={{ background: theme[s.key] }}
+                />
+                <span className="theme-slot-meta">
+                  <strong>{s.label}</strong>
+                  <small>{theme[s.key]}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="palette-box-wrap">
+            <div
+              ref={boardRef}
+              className="sv-board"
+              style={{
+                background: `linear-gradient(to top, #000000, transparent), linear-gradient(to right, #ffffff, hsl(${hsv[0]}, 100%, 50%))`,
+              }}
+              onPointerDown={(e) => {
+                draggingRef.current = true;
+                e.currentTarget.setPointerCapture(e.pointerId);
+                updateFromBoardEvent(e.clientX, e.clientY);
+              }}
+              onPointerMove={(e) => {
+                if (!draggingRef.current) return;
+                updateFromBoardEvent(e.clientX, e.clientY);
+              }}
+              onPointerUp={() => {
+                draggingRef.current = false;
+              }}
+            >
+              <span
+                className="sv-thumb"
+                style={{
+                  left: `${hsv[1]}%`,
+                  top: `${100 - hsv[2]}%`,
+                  background: currentHex,
+                }}
+              />
+            </div>
+
+            <div className="hue-slider-row">
+              <Palette size={16} />
+              <input
+                type="range"
+                className="hue-slider"
+                min="0"
+                max="360"
+                value={hsv[0]}
+                aria-label="色相滑桿"
+                onChange={(e) => {
+                  const nextHue = +e.target.value;
+                  const nextHsv: [number, number, number] = [
+                    nextHue,
+                    hsv[1],
+                    hsv[2],
+                  ];
+                  const nextHex = hsvToHex(nextHue, hsv[1], hsv[2]);
+                  updateActiveColor(nextHex, nextHsv);
+                }}
+              />
+            </div>
+
+            <div className="hex-input-row">
+              <span>HEX 色碼</span>
+              <input
+                type="text"
+                maxLength={7}
+                value={hexDraft}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setHexDraft(val);
+                  if (/^#[0-9a-fA-F]{6}$/.test(val.trim())) {
+                    const clean = val.trim().toLowerCase();
+                    updateActiveColor(clean, hexToHsv(clean));
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="preset-section">
+          <h4>官方精選主題包（一鍵套用）</h4>
+          <div className="preset-list">
+            {THEME_PRESETS.map((p) => (
+              <button
+                type="button"
+                key={p.name}
+                className="preset-pill"
+                onClick={() => applyWholeTheme(p.colors)}
+              >
+                <span className="preset-dots">
+                  <i style={{ background: p.colors.primary }} />
+                  <i style={{ background: p.colors.accent }} />
+                  <i style={{ background: p.colors.bg }} />
+                </span>
+                <span>{p.name}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="derived-preview-box">
+            <small>系統自動衍生色階預覽（全站即時連動）</small>
+            <div className="derived-chips">
+              <span
+                style={{
+                  background: derived['--green'],
+                  color: '#ffffff',
+                }}
+              >
+                主按鈕 / 已預約
+              </span>
+              <span
+                style={{
+                  background: derived['--green-soft'],
+                  color: derived['--green'],
+                }}
+              >
+                可預約空檔
+              </span>
+              <span
+                style={{
+                  background: derived['--pink'],
+                  color: derived['--green'],
+                }}
+              >
+                點綴徽章 / 次按鈕
+              </span>
+              <span
+                style={{
+                  background: derived['--pink-soft'],
+                  color: derived['--pink-deep'],
+                  border: `1px solid ${derived['--pink']}`,
+                }}
+              >
+                待確認申請
+              </span>
+              <span
+                style={{
+                  background: derived['--green-darkest'],
+                  color: '#ffffff',
+                }}
+              >
+                列表深色表頭
+              </span>
+            </div>
+          </div>
+
+          <div className="theme-actions">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={busy}
+              onClick={() => void onSave(theme)}
+            >
+              儲存品牌配色 <Check size={16} />
+            </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={busy}
+              onClick={() => applyWholeTheme(DEFAULT_THEME)}
+            >
+              <RotateCcw size={15} />
+              重置為預設（松綠薔薇）
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SlotRow({
   slot: s,
   busy,
@@ -1478,7 +2040,7 @@ function SlotRow({
     }
     try {
       await act({ action, slotId: s.id }, actionMessages[action] || '已更新');
-    } catch { }
+    } catch {}
   }
 
   return (
@@ -1623,12 +2185,14 @@ function Poster({
   month,
   setMonth,
   slots,
+  theme,
   notify,
 }: {
   shop: Shop;
   month: string;
   setMonth: (m: string) => void;
   slots: Slot[];
+  theme: ThemeColors;
   notify: (s: string) => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -1653,11 +2217,15 @@ function Poster({
     const openSlots = slots.filter(
       (s) => s.status === 'open' && s.date + 'T' + s.time > currentNow,
     );
+    const derived = derivePalette(theme);
     const dark = tone === 'cocoa';
-    const ink = dark ? '#FAF6EE' : '#1F4D3A';
-    const accent = dark ? '#F2BAC9' : '#D47491';
+    const ink = dark ? theme.bg : theme.primary;
+    const accent = dark ? theme.accent : derived['--pink-deep'];
+    const [pr, pg, pb] = hexToRgb(theme.primary);
+    const [br, bgG, bb] = hexToRgb(theme.bg);
+    const [ar, ag, ab] = hexToRgb(theme.accent);
 
-    ctx.fillStyle = dark ? '#1F4D3A' : '#F8F2EA';
+    ctx.fillStyle = dark ? theme.primary : theme.bg;
     ctx.fillRect(0, 0, 1080, 1350);
 
     if (photo) {
@@ -1670,7 +2238,7 @@ function Poster({
         photo.height * scale,
       );
     } else {
-      ctx.fillStyle = dark ? '#265B45' : '#F2BAC9';
+      ctx.fillStyle = dark ? derived['--green-mid'] : theme.accent;
       for (let i = 0; i < 27; i += 2) {
         ctx.globalAlpha = dark ? 0.22 : 0.28;
         ctx.fillRect(i * 40, 0, 40, 1350);
@@ -1679,8 +2247,8 @@ function Poster({
     }
 
     ctx.fillStyle = dark
-      ? `rgba(31,77,58,${opacity / 100})`
-      : `rgba(250,246,238,${opacity / 100})`;
+      ? `rgba(${pr},${pg},${pb},${opacity / 100})`
+      : `rgba(${br},${bgG},${bb},${opacity / 100})`;
     ctx.fillRect(42, 42, 996, 1266);
     ctx.strokeStyle = accent;
     ctx.lineWidth = 3;
@@ -1724,8 +2292,8 @@ function Poster({
     ctx.font = '600 21px sans-serif';
     weekdays.forEach((v, i) => ctx.fillText(v, x + w * (i + 0.5), 364));
     ctx.strokeStyle = dark
-      ? 'rgba(242,186,201,.32)'
-      : 'rgba(31,77,58,.2)';
+      ? `rgba(${ar},${ag},${ab},.32)`
+      : `rgba(${pr},${pg},${pb},.2)`;
     ctx.lineWidth = 1.5;
 
     cells.forEach((date, i) => {
@@ -1770,7 +2338,7 @@ function Poster({
     ctx.font = '600 15px sans-serif';
     ctx.fillStyle = accent;
     ctx.fillText(`更新於 ${dateNow()}  ·  GOODTIME`, 540, 1260);
-  }, [photo, opacity, posX, posY, tone, month, slots, shop.name]);
+  }, [photo, opacity, posX, posY, tone, month, slots, shop.name, theme]);
 
   async function upload(file?: File) {
     if (!file) return;
@@ -1862,7 +2430,7 @@ function Poster({
             className={tone === 'cream' ? 'active' : ''}
           >
             <i />
-            粉綠奶油
+            淺底奶油
           </button>
           <button
             type="button"
@@ -1870,7 +2438,7 @@ function Poster({
             className={tone === 'cocoa' ? 'active' : ''}
           >
             <i />
-            松綠薔薇
+            深底主題
           </button>
         </div>
         <label className="range-label">

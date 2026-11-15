@@ -11,10 +11,12 @@
   --green-hover: #173b2c;
   --green-mid: #2c6b51;
   --green-soft: #e3f0ea;
+  --green-darkest: #142e23;
   --pink: #f2bac9;
   --pink-hover: #eba5b8;
   --pink-deep: #9e3555;
   --pink-soft: #fcebf0;
+  --pink-border: #f3ced9;
   --border: #e4e8e5;
   --border-warm: #e8dfd3;
   --soft: #eef2ef;
@@ -89,8 +91,8 @@ svg {
 
 input, textarea {
   width: 100%;
-  background: #fafcfb;
-  border: 1px solid #d5dfd9;
+  background: var(--cream);
+  border: 1px solid var(--border);
   padding: 12px 15px;
   border-radius: 12px;
   outline: none;
@@ -101,7 +103,7 @@ input, textarea {
 input:focus, textarea:focus {
   background: #ffffff;
   border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(31, 77, 58, 0.12);
+  box-shadow: 0 0 0 3px var(--green-soft);
 }
 
 textarea {
@@ -218,7 +220,7 @@ label > span {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid #d5ddd8;
+  border: 1px solid var(--border);
   background: #ffffff;
   display: inline-flex;
   align-items: center;
@@ -241,7 +243,7 @@ label > span {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #e05378;
+  background: var(--pink-deep);
   border: 1.5px solid #ffffff;
 }
 
@@ -318,7 +320,7 @@ label > span {
   color: var(--muted);
 }
 
-/* Dashboard App Shell (Screenshot 1 Bankio Structure + Screenshot 2 Green/Pink) */
+/* Dashboard App Shell */
 .app-shell {
   display: flex;
   min-height: 100vh;
@@ -340,7 +342,7 @@ label > span {
 
 .sidebar > .brand {
   padding: 4px 8px 26px;
-  border-bottom: 1px solid #f0f3f1;
+  border-bottom: 1px solid var(--border);
   margin-bottom: 24px;
 }
 
@@ -348,7 +350,7 @@ label > span {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.2px;
-  color: #4f6259;
+  color: var(--muted);
   margin: 0 12px 12px;
 }
 
@@ -375,7 +377,7 @@ label > span {
   align-items: center;
   font-size: 13.5px;
   font-weight: 500;
-  color: #4d5f56;
+  color: var(--muted);
   white-space: nowrap;
 }
 
@@ -390,7 +392,7 @@ label > span {
   background: var(--green);
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 6px 16px rgba(31, 77, 58, 0.22);
+  box-shadow: 0 6px 16px rgba(22, 38, 31, 0.16);
 }
 
 .sidebar nav button.active svg {
@@ -418,12 +420,12 @@ label > span {
   background:
     repeating-linear-gradient(
       90deg,
-      rgba(242, 186, 201, 0.22) 0px,
-      rgba(242, 186, 201, 0.22) 12px,
-      rgba(250, 246, 238, 0.9) 12px,
-      rgba(250, 246, 238, 0.9) 24px
+      var(--pink-soft) 0px,
+      var(--pink-soft) 12px,
+      var(--cream) 12px,
+      var(--cream) 24px
     );
-  border: 1px solid #f0ced8;
+  border: 1px solid var(--pink-border);
   color: var(--green);
   position: relative;
   overflow: hidden;
@@ -449,7 +451,7 @@ label > span {
   color: var(--pink-deep);
 }
 
-/* Main Shell & Topbar (Bankio Header Style) */
+/* Main Shell & Topbar */
 .main-shell {
   margin-left: 244px;
   width: calc(100% - 244px);
@@ -487,14 +489,14 @@ label > span {
 }
 
 .breadcrumb span {
-  color: #b5c2bb;
+  color: var(--border);
 }
 
 .breadcrumb b {
   color: var(--green);
   font-weight: 600;
   background: var(--pink-soft);
-  border: 1px solid #f3ced9;
+  border: 1px solid var(--pink-border);
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 11px;
@@ -530,8 +532,8 @@ label > span {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #238c5d;
-  box-shadow: 0 0 0 3px rgba(35, 140, 93, 0.18);
+  background: var(--green-mid);
+  box-shadow: 0 0 0 3px var(--green-soft);
   flex-shrink: 0;
 }
 
@@ -547,7 +549,7 @@ label > span {
 }
 
 .avatar {
-  background: linear-gradient(135deg, var(--pink) 0%, #f7d9e2 100%);
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-soft) 100%);
   border: 2px solid var(--green);
   border-radius: 50%;
   width: 36px;
@@ -617,8 +619,8 @@ label > span {
 }
 
 .search-pill {
-  background: #ecefe9;
-  border: 1px solid #dfe5e0;
+  background: #ffffff;
+  border: 1px solid var(--border);
   border-radius: 999px;
   padding: 9px 16px;
   min-width: 240px;
@@ -637,7 +639,7 @@ label > span {
   color: var(--green);
 }
 
-/* KPI Stat Cards (Bankio Layout + Green/Pink Palette) */
+/* KPI Stat Cards */
 .stats {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1.28fr;
@@ -665,7 +667,7 @@ label > span {
 
 button.stat-card:hover {
   border-color: var(--pink);
-  box-shadow: 0 8px 24px rgba(242, 186, 201, 0.28);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -749,7 +751,7 @@ button.stat-card:hover {
   line-height: 1.25;
 }
 
-/* Featured Dark Forest Green Promo Card (like Bankio's "Available Savings" Card) */
+/* Featured Primary Promo Card */
 .stats .poster-promo {
   background: var(--green);
   border: 1px solid var(--green);
@@ -762,7 +764,7 @@ button.stat-card:hover {
   overflow: hidden;
   text-align: left;
   color: #ffffff;
-  box-shadow: 0 10px 26px rgba(31, 77, 58, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .stats .poster-promo:hover {
@@ -797,7 +799,7 @@ button.stat-card:hover {
 
 .promo-left p {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .promo-left p b {
@@ -811,7 +813,7 @@ button.stat-card:hover {
   border-radius: 10px;
   min-width: 78px;
   padding: 10px 8px;
-  box-shadow: 4px 4px 0 rgba(242, 186, 201, 0.45);
+  box-shadow: 4px 4px 0 var(--pink-border);
   transform: rotate(6deg);
   display: flex;
   align-items: center;
@@ -925,11 +927,11 @@ button.stat-card:hover {
 }
 
 .legend .open, .mobile-dots .open {
-  background: #238c5d;
+  background: var(--green-mid);
 }
 
 .legend .pending, .mobile-dots .pending {
-  background: #e56b8f;
+  background: var(--pink-deep);
 }
 
 .legend .booked, .mobile-dots .booked {
@@ -937,7 +939,7 @@ button.stat-card:hover {
 }
 
 .legend .closed, .mobile-dots .closed {
-  background: #c5cec9;
+  background: var(--border);
 }
 
 .weekdays {
@@ -950,7 +952,7 @@ button.stat-card:hover {
   font-weight: 600;
   color: var(--green);
   text-align: center;
-  background: #f8faf8;
+  background: var(--cream);
 }
 
 .calendar-grid {
@@ -976,11 +978,11 @@ button.stat-card:hover {
 }
 
 .day:hover:not(.blank) {
-  background: #fdf6f8;
+  background: var(--pink-soft);
 }
 
 .day.blank {
-  background: #f9faf9;
+  background: var(--bg);
 }
 
 .day.selected {
@@ -989,7 +991,7 @@ button.stat-card:hover {
 }
 
 .day.past {
-  background: #fbfcfb;
+  background: var(--cream);
 }
 
 .day-number {
@@ -1062,7 +1064,7 @@ button.stat-card:hover {
 .calendar-slot.pending {
   background: var(--pink-soft);
   color: var(--pink-deep);
-  border: 1px solid #f5cbd7;
+  border: 1px solid var(--pink-border);
 }
 
 .calendar-slot.booked {
@@ -1071,13 +1073,14 @@ button.stat-card:hover {
 }
 
 .calendar-slot.closed {
-  background: #f0f2f0;
-  color: #8b9992;
+  background: var(--bg);
+  color: var(--muted);
 }
 
 .no-slot {
   font-size: 10px;
-  color: #b7c2bc;
+  color: var(--muted);
+  opacity: 0.65;
   margin-top: 10px;
 }
 
@@ -1097,7 +1100,7 @@ button.stat-card:hover {
   padding: 14px 22px;
   font-size: 11px;
   color: var(--muted);
-  background: #fafcfb;
+  background: var(--cream);
 }
 
 .calendar-footer span {
@@ -1114,7 +1117,7 @@ button.stat-card:hover {
 .day-panel-title {
   padding: 16px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--green) 0%, #286048 100%);
+  background: linear-gradient(135deg, var(--green) 0%, var(--green-mid) 100%);
   color: #ffffff;
   margin-bottom: 16px;
 }
@@ -1140,7 +1143,7 @@ button.stat-card:hover {
 
 .day-panel-title p {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.84);
 }
 
 .slot-list {
@@ -1150,7 +1153,7 @@ button.stat-card:hover {
   margin: 16px 0;
 }
 
-/* SlotRow - Responsive between Day Panel Card & Requests Table Row */
+/* SlotRow */
 .slot-row {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -1161,18 +1164,18 @@ button.stat-card:hover {
 }
 
 .slot-row:hover {
-  border-color: #cad6d0;
+  border-color: var(--green-mid);
   box-shadow: var(--shadow-sm);
 }
 
 .slot-row.pending {
   border-color: var(--pink);
-  background: #fff9fb;
+  background: var(--pink-soft);
 }
 
 .slot-row.closed {
   opacity: 0.72;
-  background: #f9faf9;
+  background: var(--bg);
 }
 
 .slot-top {
@@ -1212,7 +1215,7 @@ button.stat-card:hover {
 }
 
 .slot-avatar.closed {
-  background: #eaeeec;
+  background: var(--bg);
   color: var(--muted);
 }
 
@@ -1260,7 +1263,7 @@ button.stat-card:hover {
 }
 
 .status.closed {
-  background: #eef1ef;
+  background: var(--bg);
   color: var(--muted);
 }
 
@@ -1271,8 +1274,7 @@ button.stat-card:hover {
   color: var(--ink);
 }
 
-.day-panel .slot-main-info .muted-note,
-.day-panel .slot-main-info .slot- user-empty {
+.day-panel .slot-main-info .muted-note {
   display: none;
 }
 
@@ -1361,7 +1363,7 @@ button.stat-card:hover {
   margin-top: 18px;
   color: var(--green);
   background: var(--pink-soft);
-  border: 1px solid #f4d0dc;
+  border: 1px solid var(--pink-border);
   padding: 13px 14px;
   border-radius: 12px;
 }
@@ -1410,7 +1412,7 @@ button.stat-card:hover {
   color: var(--muted);
 }
 
-/* Requests / Transactions Activity Overview Table (Screenshot 1 Bottom Style) */
+/* Requests Table */
 .requests {
   padding: 24px;
 }
@@ -1442,7 +1444,7 @@ button.stat-card:hover {
 
 .filters {
   display: flex;
-  background: #f0f3f1;
+  background: var(--bg);
   padding: 4px;
   border-radius: 999px;
   gap: 4px;
@@ -1459,11 +1461,11 @@ button.stat-card:hover {
 .filters button.active {
   background: var(--green);
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(31, 77, 58, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .table-header {
-  background: #142e23;
+  background: var(--green-darkest);
   color: #ffffff;
   border-radius: 12px;
   padding: 14px 20px;
@@ -1509,12 +1511,12 @@ button.stat-card:hover {
 }
 
 .request-item .slot-row:hover {
-  background: #fafcfb;
+  background: var(--cream);
   box-shadow: none;
 }
 
 .request-item .slot-row.pending {
-  background: #fff8fa;
+  background: var(--pink-soft);
 }
 
 .request-item .slot-top {
@@ -1556,16 +1558,20 @@ button.stat-card:hover {
   flex: 0 1 auto;
 }
 
-/* Settings */
+/* Settings & Theme Studio Palette */
 .settings-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 22px;
-  max-width: 1060px;
+  max-width: 1180px;
 }
 
 .settings-card {
   padding: 30px;
+}
+
+.settings-card.theme-studio-card {
+  grid-column: 1 / -1;
 }
 
 .settings-card h2 {
@@ -1592,6 +1598,247 @@ button.stat-card:hover {
   overflow-wrap: anywhere;
   margin-top: 22px;
   color: var(--green);
+}
+
+.theme-studio-layout {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 28px;
+  margin-top: 22px;
+  align-items: start;
+}
+
+.theme-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.theme-slot-btn {
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: left;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.16s ease;
+}
+
+.theme-slot-btn:hover {
+  border-color: var(--pink);
+}
+
+.theme-slot-btn.active {
+  border-color: var(--green);
+  background: var(--pink-soft);
+  box-shadow: 0 4px 14px rgba(22, 38, 31, 0.08);
+}
+
+.theme-slot-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(22, 38, 31, 0.15);
+  flex-shrink: 0;
+}
+
+.theme-slot-meta strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.theme-slot-meta small {
+  display: block;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.palette-box-wrap {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.sv-board {
+  width: 100%;
+  height: 190px;
+  border-radius: 12px;
+  position: relative;
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.sv-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hue-slider-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hue-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #ff0000 0%,
+    #ffff00 17%,
+    #00ff00 33%,
+    #00ffff 50%,
+    #0000ff 67%,
+    #ff00ff 83%,
+    #ff0000 100%
+  );
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--ink);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.hex-input-row {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hex-input-row span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.hex-input-row input[type='text'] {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 9px 12px;
+  background: #ffffff;
+}
+
+.preset-section h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 10px;
+}
+
+.preset-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.preset-pill {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.preset-pill:hover {
+  border-color: var(--green);
+  background: var(--cream);
+}
+
+.preset-dots {
+  display: inline-flex;
+  align-items: center;
+}
+
+.preset-dots i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.preset-dots i + i {
+  margin-left: -6px;
+}
+
+.derived-preview-box {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.derived-preview-box small {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.derived-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.derived-chips span {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+
+.theme-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.theme-actions .btn {
+  margin: 0;
 }
 
 /* Modal & Notifications */
@@ -1900,12 +2147,12 @@ button.stat-card:hover {
   height: 18px;
   width: 18px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #faf6ee 50%, #f2bac9 50%);
+  background: linear-gradient(135deg, var(--cream) 50%, var(--pink) 50%);
   border: 1px solid var(--green);
 }
 
 .tone-options button:nth-child(2) i {
-  background: linear-gradient(135deg, #1f4d3a 50%, #f2bac9 50%);
+  background: linear-gradient(135deg, var(--green) 50%, var(--pink) 50%);
 }
 
 .range-label span {
@@ -1940,10 +2187,10 @@ button.stat-card:hover {
   background:
     repeating-linear-gradient(
       90deg,
-      rgba(31, 77, 58, 0.08) 0px,
-      rgba(31, 77, 58, 0.08) 24px,
-      rgba(242, 186, 201, 0.2) 24px,
-      rgba(242, 186, 201, 0.2) 48px
+      var(--green-soft) 0px,
+      var(--green-soft) 24px,
+      var(--pink-soft) 24px,
+      var(--pink-soft) 48px
     ),
     var(--cream);
   border: 1px solid var(--border);
@@ -1997,7 +2244,7 @@ button.stat-card:hover {
   margin-top: 20px;
 }
 
-/* Welcome & Customer Booking Page (Monfalcone Screenshot 2 Editorial Green/Pink Stripes + Framed Cream Card) */
+/* Welcome & Customer Booking Page */
 .booking-page header,
 .welcome header {
   height: 82px;
@@ -2226,15 +2473,15 @@ button.stat-card:hover {
 }
 
 .time-choice:disabled {
-  background: #f2f4f2;
-  border-color: #dce2de;
-  color: #98a69f;
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--muted);
   opacity: 0.7;
 }
 
 .time-choice:disabled span {
-  background: #e4e9e6;
-  color: #7c8b83;
+  background: var(--border);
+  color: var(--muted);
 }
 
 .time-choice:hover:not(:disabled) {
@@ -2365,7 +2612,7 @@ button.stat-card:hover {
 }
 
 .welcome-features {
-  border-top: 1px solid #dfd8ca;
+  border-top: 1px solid var(--border);
   padding-top: 22px;
   margin-top: 30px;
   display: flex;
@@ -2404,7 +2651,7 @@ button.stat-card:hover {
   justify-content: center;
   color: var(--pink);
   border: 6px solid var(--pink);
-  box-shadow: 0 18px 40px rgba(31, 77, 58, 0.18);
+  box-shadow: var(--shadow-md);
 }
 
 .art-arch > span {
@@ -2427,7 +2674,7 @@ button.stat-card:hover {
 .sample-card {
   background: #ffffff;
   border: 2px solid var(--green);
-  box-shadow: 0 16px 36px rgba(22, 38, 31, 0.12);
+  box-shadow: var(--shadow-md);
   border-radius: 16px;
   position: absolute;
   left: 0;
@@ -2514,7 +2761,6 @@ button.stat-card:hover {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 1px;
-  color: var(--green);
   background: var(--green);
   color: var(--cream);
 }
@@ -2579,6 +2825,9 @@ button.stat-card:hover {
   }
   .booking-layout {
     grid-template-columns: minmax(0, 1fr) 270px;
+  }
+  .theme-studio-layout {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -2777,7 +3026,9 @@ button.stat-card:hover {
   .request-list,
   .settings-grid,
   .booking-layout,
-  .poster-layout {
+  .poster-layout,
+  .theme-slots,
+  .preset-list {
     grid-template-columns: 1fr;
     display: flex;
     flex-direction: column;
