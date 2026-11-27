@@ -491,36 +491,19 @@ function Calendar({
 }
 
 function Welcome() {
-  const m = dateNow().slice(0, 7);
   return (
     <div className="welcome">
       <header>
         <Brand />
-        <div className="welcome-nav">
-          <span className="nav-pill active">HOME</span>
-          <span>CALENDAR</span>
-          <span>POSTER</span>
-          <span>BOOKING</span>
-        </div>
-        <a
-          className="btn pink-btn small"
-          href="/signin-with-chatgpt?return_to=%2F"
-          target="_top"
-        >
-          工作室登入 <ArrowUpRight size={15} />
-        </a>
       </header>
       <div className="stripe-banner">
         <div className="welcome-hero-frame">
           <main className="welcome-main">
             <div>
-              <span className="eyebrow">
-                A LITTLE SPACE · FOR BEAUTIFUL THINGS
-              </span>
               <h1>
                 把時間留給美好，
                 <br />
-                把預約交給<span>GOODTIME。</span>
+                把預約交給<span>GOODTIME</span>！
               </h1>
               <p>
                 從客人的下一次預約，到你的下一篇貼文。
@@ -543,9 +526,6 @@ function Welcome() {
                   登入管理後台
                 </a>
               </div>
-              <div className="welcome-note">
-                <LockKeyhole size={14} /> 使用 ChatGPT 登入管理・客人免註冊預約
-              </div>
               <div className="welcome-features">
                 <span>
                   <CalendarDays size={16} /> 預約自動同步
@@ -567,44 +547,15 @@ function Welcome() {
                   <i>BUILD, GROW &amp; THRIVE.</i>
                 </span>
               </div>
-              <div className="sample-card">
-                <span className="eyebrow">YOUR STUDIO · AT A GLANCE</span>
-                <h3>
-                  {monthLabel(m)} <small>示意畫面</small>
-                </h3>
-                <div className="sample-week">
-                  {['一', '二', '三', '四', '五'].map((v, i) => (
-                    <div key={v}>
-                      <small>週{v}</small>
-                      <b>{12 + i}</b>
-                      <span
-                        className={
-                          i === 2 ? 'active' : i === 4 ? 'pink-slot' : ''
-                        }
-                      >
-                        {i === 2 ? '14:00' : i === 4 ? '16:00' : '—'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <p>
-                  <span className="green-dot" /> 下一個美好，從一個空檔開始。
-                </p>
-              </div>
             </div>
           </main>
         </div>
       </div>
       <div className="ribbon-ticker">
         <span>
-          GOODTIME ✿ BOOKING STUDIO ✿ MAKE ROOM FOR BEAUTIFUL THINGS ✿
-          專屬預約與空檔美學 ✿ GOODTIME ✿ BOOKING STUDIO
+          從空檔到見面，中間只差一個預約連結｜From an open slot to “See you then!” — all it takes is one booking link.
         </span>
       </div>
-      <footer>
-        GOODTIME BOOKING STUDIO <span>為每一間用心的小工作室而設計</span>
-        <span>預約 · 日常 · 靈感</span>
-      </footer>
     </div>
   );
 }

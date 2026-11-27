@@ -2283,9 +2283,13 @@ button.stat-card:hover {
       var(--pink) 56px
     );
   padding: 48px 5vw;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .welcome-hero-frame {
+  width: 100%;
   max-width: 1320px;
   margin: 0 auto;
   background: var(--cream);
@@ -2295,10 +2299,13 @@ button.stat-card:hover {
 }
 
 .ribbon-ticker {
+  height: 82px;
   background: var(--cream);
   border-top: 2px solid var(--green);
-  border-bottom: 2px solid var(--green);
-  padding: 10px 20px;
+  padding: 0 5vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   font-family: 'Cormorant Garamond', 'Noto Serif TC', serif;
   font-size: 12px;
@@ -2306,7 +2313,6 @@ button.stat-card:hover {
   letter-spacing: 2.2px;
   color: var(--green);
   overflow: hidden;
-  white-space: nowrap;
 }
 
 .booking-label {
@@ -2562,6 +2568,8 @@ button.stat-card:hover {
 .welcome {
   background: var(--cream);
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .welcome-main {
@@ -2635,8 +2643,9 @@ button.stat-card:hover {
 
 .welcome-art {
   position: relative;
-  min-height: 440px;
-  padding-bottom: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .art-arch {
