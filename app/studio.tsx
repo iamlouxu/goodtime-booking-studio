@@ -345,7 +345,8 @@ const tabDescriptions: Record<TabKey, string> = {
 const actionMessages: Record<string, string> = {
   confirm: '預約已確認，請聯繫客人告知結果',
   reject: '已婉拒並重新開放時段，請聯繫客人',
-  close: '時段已關閉',
+  close: '時段已移除',
+  remove: '時段已移除',
   reopen: '時段已重新開放',
   cancel: '預約已取消，請聯繫客人',
 };
@@ -1169,10 +1170,6 @@ export default function Studio({
                 <i className="booked" />
                 已預約
               </span>
-              <span>
-                <i className="closed" />
-                未開放
-              </span>
             </div>
           </section>
           <aside className="card booking-times">
@@ -1629,10 +1626,6 @@ export default function Studio({
                     <span>
                       <i className="booked" />
                       已預約
-                    </span>
-                    <span>
-                      <i className="closed" />
-                      未開放
                     </span>
                   </div>
                   <Calendar
@@ -2395,17 +2388,9 @@ function SlotRow({
           <button
             type="button"
             disabled={busy}
-            onClick={() => void go('close')}
+            onClick={() => void go('remove')}
           >
-            關閉時段
-          </button>
-        ) : s.status === 'closed' ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void go('reopen')}
-          >
-            重新開放
+            移除時段
           </button>
         ) : (
           <button

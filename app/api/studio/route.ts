@@ -306,10 +306,23 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
+    if (b.action === "close" || b.action === "remove") {
+      const r = await db()
+        .prepare(
+          "DELETE FROM slots WHERE id = ? AND shop_id = ? AND status IN ('open', 'closed')",
+        )
+        .bind(String(b.slotId), shop.id)
+        .run();
+
+      if (!r.meta.changes) {
+        return fail("時段狀態已更新，請重新整理", 409);
+      }
+      return Response.json({ ok: true });
+    }
+
     const map: Record<string, [string, string[]]> = {
       confirm: ["booked", ["pending"]],
       reject: ["open", ["pending"]],
-      close: ["closed", ["open"]],
       reopen: ["open", ["closed"]],
       cancel: ["open", ["booked"]],
     };
