@@ -513,13 +513,9 @@ function Welcome() {
                 <span className="btn primary large welcome-cta-static">
                   建立我的工作室 <ArrowRight size={18} />
                 </span>
-                <a
-                  className="btn pink-btn large"
-                  href="/signin-with-chatgpt?return_to=%2F"
-                  target="_top"
-                >
+                <Link className="btn pink-btn large" href="/login">
                   登入管理後台
-                </a>
+                </Link>
               </div>
               <div className="welcome-features">
                 <span>
@@ -1062,10 +1058,20 @@ export default function Studio({
             <ExternalLink size={17} />
             客人預約頁
           </a>
-          <a href="/signout-with-chatgpt?return_to=%2F" target="_top">
+          <button
+            type="button"
+            onClick={async () => {
+              await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'logout' }),
+              });
+              location.href = '/';
+            }}
+          >
             <LogOut size={17} />
             登出帳號
-          </a>
+          </button>
         </div>
         <div className="sidebar-bottom">
           <div className="little-note">
@@ -1613,14 +1619,21 @@ export default function Studio({
                     只有目前登入的老闆帳號可管理此工作室。客人只能看到時段狀態。
                   </p>
                 </div>
-                <a
+                <button
+                  type="button"
                   className="btn"
-                  href="/signout-with-chatgpt?return_to=%2F"
-                  target="_top"
+                  onClick={async () => {
+                    await fetch('/api/auth', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'logout' }),
+                    });
+                    location.href = '/';
+                  }}
                 >
                   <LogOut size={16} />
                   登出帳號
-                </a>
+                </button>
               </section>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getSessionUser } from "@/lib/auth";
 
 type ShopRow = {
   id: string;
@@ -52,31 +52,18 @@ export async function GET(req: Request) {
     let owner = false;
 
     if (id) {
-      if (id === "default") {
-        shop = await db()
-          .prepare("SELECT id, name, description, theme FROM shops LIMIT 1")
-          .first<ShopRow>();
-      } else {
-        shop = await db()
-          .prepare("SELECT id, name, description, theme FROM shops WHERE id = ?")
-          .bind(id)
-          .first<ShopRow>();
-      }
+      shop = await db()
+        .prepare("SELECT id, name, description, theme FROM shops WHERE id = ?")
+        .bind(id)
+        .first<ShopRow>();
     } else {
-      const user = await getChatGPTUser();
+      const user = await getSessionUser();
       if (!user) return fail("請先登入", 401);
 
       shop = await db()
         .prepare("SELECT id, name, description, theme FROM shops WHERE owner = ?")
         .bind(user.userId)
         .first<ShopRow>();
-
-      // Fallback: if single-studio mode and a shop already exists, bind/use it
-      if (!shop) {
-        shop = await db()
-          .prepare("SELECT id, name, description, theme FROM shops LIMIT 1")
-          .first<ShopRow>();
-      }
       owner = true;
     }
 
@@ -161,7 +148,7 @@ export async function POST(req: Request) {
     }
 
     // Studio owner actions (requires admin login)
-    const user = await getChatGPTUser();
+    const user = await getSessionUser();
     if (!user) return fail("請先登入管理員帳號", 401);
 
     if (b.action === "create") {
@@ -183,14 +170,11 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    let shop = await db()
+    const shop = await db()
       .prepare("SELECT id FROM shops WHERE owner = ?")
       .bind(user.userId)
       .first<{ id: string }>();
 
-    if (!shop) {
-      shop = await db().prepare("SELECT id FROM shops LIMIT 1").first<{ id: string }>();
-    }
     if (!shop) return fail("請先建立工作室", 404);
 
     if (b.action === "settings") {
