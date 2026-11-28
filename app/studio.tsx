@@ -505,18 +505,14 @@ function Welcome() {
                 把預約交給<span>GOODTIME</span>！
               </h1>
               <p>
-                從客人的下一次預約，到你的下一篇貼文。
+                從客人的下一次預約，到你的下一篇貼文
                 <br />
-                讓工作室的每一個空檔，都剛剛好。
+                讓工作室的每一個空檔，都剛剛好
               </p>
               <div className="welcome-cta-group">
-                <a
-                  className="btn primary large"
-                  href="/signin-with-chatgpt?return_to=%2F"
-                  target="_top"
-                >
+                <span className="btn primary large welcome-cta-static">
                   建立我的工作室 <ArrowRight size={18} />
-                </a>
+                </span>
                 <a
                   className="btn pink-btn large"
                   href="/signin-with-chatgpt?return_to=%2F"

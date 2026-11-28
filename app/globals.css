@@ -2594,6 +2594,7 @@ button.stat-card:hover {
 .welcome-main h1 span {
   background: var(--pink);
   padding: 0 10px;
+  margin-left: 8px;
   border-radius: 8px;
   color: var(--ink);
 }
@@ -2607,8 +2608,18 @@ button.stat-card:hover {
 
 .welcome-cta-group {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  align-items: center;
   flex-wrap: wrap;
+}
+
+.welcome-cta-static,
+.welcome-cta-static:hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: #ffffff;
+  cursor: default;
+  pointer-events: none;
 }
 
 .welcome-note {
