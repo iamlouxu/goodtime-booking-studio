@@ -466,7 +466,7 @@ function Calendar({
               aria-pressed={d === selected}
             >
               <span className="day-number">
-                {Number(d.slice(8))}
+                <b>{Number(d.slice(8))}</b>
                 {d === today && <i>今天</i>}
               </span>
               <div className="day-slots">
@@ -485,12 +485,6 @@ function Calendar({
                   <span className="more">+{list.length - 3} 時段</span>
                 )}
                 {!list.length && <span className="no-slot">未開放</span>}
-              </div>
-              <div className="mobile-dots">
-                {list.slice(0, 4).map((s) => (
-                  <i key={s.id} className={s.status} />
-                ))}
-                {open.length > 0 && <small>{open.length} 空檔</small>}
               </div>
             </button>
           );

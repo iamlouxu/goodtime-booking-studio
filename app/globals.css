@@ -1092,8 +1092,8 @@ button.stat-card:hover {
   color: var(--pink-deep);
 }
 
-.mobile-dots {
-  display: none;
+.day-number b {
+  font-weight: inherit;
 }
 
 .calendar-footer {
@@ -3287,7 +3287,25 @@ button.stat-card:hover {
     padding: 2px;
   }
   .workspace {
-    padding: 20px 16px 92px;
+    padding: 16px 16px 92px;
+  }
+  .booking-layout {
+    padding: 0 16px;
+    margin-top: 20px;
+  }
+  .calendar-toolbar,
+  .section-top {
+    padding: 14px 12px 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .legend {
+    padding: 6px 12px 12px;
+    gap: 12px;
+  }
+  .weekdays {
+    padding: 8px 0;
+    font-size: 10px;
   }
   .search-pill {
     width: 100%;
@@ -3297,28 +3315,49 @@ button.stat-card:hover {
     grid-template-columns: 1fr;
   }
   .day {
-    min-height: 76px;
-    padding: 8px 6px;
+    min-height: 88px;
+    padding: 6px 3px;
   }
-  .day-slots {
+  .day-number {
+    font-size: 11px;
+    justify-content: center;
+  }
+  .day-number i {
     display: none;
   }
-  .mobile-dots {
-    display: flex;
-    flex-wrap: wrap;
+  .day.today .day-number b {
+    background: var(--green);
+    color: #ffffff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    font-size: 10px;
+  }
+  .day-slots {
+    margin-top: 5px;
     gap: 3px;
+  }
+  .calendar-slot {
+    justify-content: center;
+    padding: 2px 3px;
+    font-size: 9.5px;
+    border-radius: 4px;
+    gap: 0;
+  }
+  .calendar-slot b,
+  .calendar-slot em {
+    display: none;
+  }
+  .no-slot {
+    font-size: 9px;
+    text-align: center;
     margin-top: 8px;
   }
-  .mobile-dots i {
-    width: 5px;
-    height: 5px;
-  }
-  .mobile-dots small {
-    font-size: 8px;
-    width: 100%;
-    margin-top: 2px;
-    color: var(--green);
-    font-weight: 600;
+  .more {
+    font-size: 9px;
+    text-align: center;
   }
   .day-panel .slot-list,
   .request-list,
@@ -3330,6 +3369,7 @@ button.stat-card:hover {
     grid-template-columns: 1fr;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
   }
   .requests-top {
     flex-direction: column;
