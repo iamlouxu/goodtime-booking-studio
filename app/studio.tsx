@@ -1137,8 +1137,7 @@ export default function Studio({
         </div>
         <div className="ribbon-ticker">
           <span>
-            {shop.name} ✿ ONLINE BOOKING ✿ 選擇理想時段・為自己留一點美好時光 ✿{' '}
-            {shop.name} ✿ ONLINE BOOKING
+            從空檔到見面，中間只差一個預約連結｜From an open slot to “See you then!” — all it takes is one booking link.
           </span>
         </div>
         <main className="booking-layout">
@@ -1219,7 +1218,7 @@ export default function Studio({
             </small>
           </aside>
         </main>
-        <footer>由 GOODTIME BOOKING STUDIO 提供預約服務</footer>
+        <footer />
         {pick && (
           <Modal
             title={

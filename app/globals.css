@@ -2658,12 +2658,7 @@ button.stat-card:hover {
 }
 
 .booking-page footer {
-  padding: 44px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: var(--green);
+  height: 82px;
 }
 
 .booking-summary {
