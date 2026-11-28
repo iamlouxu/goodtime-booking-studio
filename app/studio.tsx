@@ -561,6 +561,73 @@ function Welcome() {
   );
 }
 
+function DurationSelect({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (mins: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className={`duration-select ${open ? 'is-open' : ''}`} ref={wrapRef}>
+      <button
+        type="button"
+        className="duration-select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>{value} 分鐘</span>
+        <ChevronDown size={15} className="duration-select-arrow" />
+      </button>
+      {open && (
+        <div className="duration-select-menu" role="listbox">
+          {DURATION_OPTIONS.map((mins) => {
+            const active = mins === value;
+            return (
+              <button
+                type="button"
+                role="option"
+                aria-selected={active}
+                key={mins}
+                className={`duration-select-option ${active ? 'active' : ''}`}
+                onClick={() => {
+                  onChange(mins);
+                  setOpen(false);
+                }}
+              >
+                <span>{mins} 分鐘</span>
+                {active && <Check size={14} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ServicesSettingsCard({
   services,
   busy,
@@ -597,7 +664,9 @@ function ServicesSettingsCard({
           await onSave(valid);
         }}
       >
-        <div className="service-rows-head">
+        <div
+          className={`service-rows-head ${rows.length > 1 ? 'has-remove' : ''}`}
+        >
           <span>項目名稱</span>
           <span>所需時間</span>
         </div>
@@ -617,23 +686,16 @@ function ServicesSettingsCard({
                   );
                 }}
               />
-              <select
+              <DurationSelect
                 value={item.duration_minutes}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
+                onChange={(val) => {
                   setRows((prev) =>
                     prev.map((r, i) =>
                       i === idx ? { ...r, duration_minutes: val } : r,
                     ),
                   );
                 }}
-              >
-                {DURATION_OPTIONS.map((mins) => (
-                  <option key={mins} value={mins}>
-                    {mins} 分鐘
-                  </option>
-                ))}
-              </select>
+              />
               {rows.length > 1 && (
                 <button
                   type="button"
@@ -957,7 +1019,9 @@ export default function Studio({
               } catch {}
             }}
           >
-            <div className="service-rows-head">
+            <div
+              className={`service-rows-head ${draftServices.length > 1 ? 'has-remove' : ''}`}
+            >
               <span>項目名稱</span>
               <span>所需時間</span>
             </div>
@@ -985,23 +1049,16 @@ export default function Studio({
                       );
                     }}
                   />
-                  <select
+                  <DurationSelect
                     value={item.duration_minutes}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
+                    onChange={(val) => {
                       setDraftServices((prev) =>
                         prev.map((r, i) =>
                           i === idx ? { ...r, duration_minutes: val } : r,
                         ),
                       );
                     }}
-                  >
-                    {DURATION_OPTIONS.map((mins) => (
-                      <option key={mins} value={mins}>
-                        {mins} 分鐘
-                      </option>
-                    ))}
-                  </select>
+                  />
                   {draftServices.length > 1 && (
                     <button
                       type="button"
