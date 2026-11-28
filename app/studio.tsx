@@ -52,6 +52,16 @@ type Shop = {
   theme?: string | null;
 };
 
+type ServiceItem = {
+  id: string;
+  shop_id?: string;
+  name: string;
+  duration_minutes: number;
+  sort_order?: number;
+};
+
+const DURATION_OPTIONS = [30, 60, 90, 120, 150, 180, 210, 240];
+
 type ThemeColors = {
   primary: string;
   accent: string;
@@ -335,7 +345,8 @@ const tabDescriptions: Record<TabKey, string> = {
 const actionMessages: Record<string, string> = {
   confirm: '預約已確認，請聯繫客人告知結果',
   reject: '已婉拒並重新開放時段，請聯繫客人',
-  close: '時段已關閉',
+  close: '時段已移除',
+  remove: '時段已移除',
   reopen: '時段已重新開放',
   cancel: '預約已取消，請聯繫客人',
 };
@@ -371,7 +382,6 @@ function Brand() {
       <span>
         GOODTIME<small>BOOKING STUDIO</small>
       </span>
-      <ChevronDown size={15} className="brand-chevron" />
     </Link>
   );
 }
@@ -456,7 +466,7 @@ function Calendar({
               aria-pressed={d === selected}
             >
               <span className="day-number">
-                {Number(d.slice(8))}
+                <b>{Number(d.slice(8))}</b>
                 {d === today && <i>今天</i>}
               </span>
               <div className="day-slots">
@@ -476,12 +486,6 @@ function Calendar({
                 )}
                 {!list.length && <span className="no-slot">未開放</span>}
               </div>
-              <div className="mobile-dots">
-                {list.slice(0, 4).map((s) => (
-                  <i key={s.id} className={s.status} />
-                ))}
-                {open.length > 0 && <small>{open.length} 空檔</small>}
-              </div>
             </button>
           );
         })}
@@ -491,60 +495,32 @@ function Calendar({
 }
 
 function Welcome() {
-  const m = dateNow().slice(0, 7);
   return (
     <div className="welcome">
       <header>
         <Brand />
-        <div className="welcome-nav">
-          <span className="nav-pill active">HOME</span>
-          <span>CALENDAR</span>
-          <span>POSTER</span>
-          <span>BOOKING</span>
-        </div>
-        <a
-          className="btn pink-btn small"
-          href="/signin-with-chatgpt?return_to=%2F"
-          target="_top"
-        >
-          工作室登入 <ArrowUpRight size={15} />
-        </a>
       </header>
       <div className="stripe-banner">
         <div className="welcome-hero-frame">
           <main className="welcome-main">
             <div>
-              <span className="eyebrow">
-                A LITTLE SPACE · FOR BEAUTIFUL THINGS
-              </span>
               <h1>
                 把時間留給美好，
                 <br />
-                把預約交給<span>GOODTIME。</span>
+                把預約交給<span>GOODTIME</span>！
               </h1>
               <p>
-                從客人的下一次預約，到你的下一篇貼文。
+                從客人的下一次預約，到你的下一篇貼文
                 <br />
-                讓工作室的每一個空檔，都剛剛好。
+                讓工作室的每一個空檔，都剛剛好
               </p>
               <div className="welcome-cta-group">
-                <a
-                  className="btn primary large"
-                  href="/signin-with-chatgpt?return_to=%2F"
-                  target="_top"
-                >
+                <span className="btn primary large welcome-cta-static">
                   建立我的工作室 <ArrowRight size={18} />
-                </a>
-                <a
-                  className="btn pink-btn large"
-                  href="/signin-with-chatgpt?return_to=%2F"
-                  target="_top"
-                >
+                </span>
+                <Link className="btn pink-btn large" href="/login">
                   登入管理後台
-                </a>
-              </div>
-              <div className="welcome-note">
-                <LockKeyhole size={14} /> 使用 ChatGPT 登入管理・客人免註冊預約
+                </Link>
               </div>
               <div className="welcome-features">
                 <span>
@@ -567,45 +543,200 @@ function Welcome() {
                   <i>BUILD, GROW &amp; THRIVE.</i>
                 </span>
               </div>
-              <div className="sample-card">
-                <span className="eyebrow">YOUR STUDIO · AT A GLANCE</span>
-                <h3>
-                  {monthLabel(m)} <small>示意畫面</small>
-                </h3>
-                <div className="sample-week">
-                  {['一', '二', '三', '四', '五'].map((v, i) => (
-                    <div key={v}>
-                      <small>週{v}</small>
-                      <b>{12 + i}</b>
-                      <span
-                        className={
-                          i === 2 ? 'active' : i === 4 ? 'pink-slot' : ''
-                        }
-                      >
-                        {i === 2 ? '14:00' : i === 4 ? '16:00' : '—'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <p>
-                  <span className="green-dot" /> 下一個美好，從一個空檔開始。
-                </p>
-              </div>
             </div>
           </main>
         </div>
       </div>
       <div className="ribbon-ticker">
-        <span>
-          GOODTIME ✿ BOOKING STUDIO ✿ MAKE ROOM FOR BEAUTIFUL THINGS ✿
-          專屬預約與空檔美學 ✿ GOODTIME ✿ BOOKING STUDIO
+        <span className="ribbon-zh">從空檔到見面，中間只差一個預約連結</span>
+        <span className="ribbon-sep" aria-hidden="true">
+          ｜
+        </span>
+        <span className="ribbon-en">
+          <span>From an open slot to “See you then!”</span>
+          <span className="ribbon-dash" aria-hidden="true">
+            {' '}—{' '}
+          </span>
+          <span>all it takes is one booking link.</span>
         </span>
       </div>
-      <footer>
-        GOODTIME BOOKING STUDIO <span>為每一間用心的小工作室而設計</span>
-        <span>預約 · 日常 · 靈感</span>
-      </footer>
     </div>
+  );
+}
+
+function DurationSelect({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (mins: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className={`duration-select ${open ? 'is-open' : ''}`} ref={wrapRef}>
+      <button
+        type="button"
+        className="duration-select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>{value} 分鐘</span>
+        <ChevronDown size={15} className="duration-select-arrow" />
+      </button>
+      {open && (
+        <div className="duration-select-menu" role="listbox">
+          {DURATION_OPTIONS.map((mins) => {
+            const active = mins === value;
+            return (
+              <button
+                type="button"
+                role="option"
+                aria-selected={active}
+                key={mins}
+                className={`duration-select-option ${active ? 'active' : ''}`}
+                onClick={() => {
+                  onChange(mins);
+                  setOpen(false);
+                }}
+              >
+                <span>{mins} 分鐘</span>
+                {active && <Check size={14} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ServicesSettingsCard({
+  services,
+  busy,
+  onSave,
+}: {
+  services: ServiceItem[];
+  busy: boolean;
+  onSave: (list: { id: string; name: string; duration_minutes: number }[]) => Promise<void>;
+}) {
+  const [rows, setRows] = useState<
+    { id: string; name: string; duration_minutes: number }[]
+  >(() =>
+    services.length
+      ? services.map((s) => ({
+          id: s.id,
+          name: s.name,
+          duration_minutes: s.duration_minutes,
+        }))
+      : [{ id: 'new-1', name: '', duration_minutes: 60 }],
+  );
+
+  return (
+    <section className="card settings-card services-settings-card">
+      <span className="eyebrow">STUDIO SERVICES</span>
+      <h2>項目與時間設定</h2>
+      <p className="muted">
+        設定工作室提供的項目與時間（以 30 分鐘為單位），客人預約時將可選擇項目。
+      </p>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const valid = rows.filter((r) => r.name.trim());
+          if (!valid.length) return;
+          await onSave(valid);
+        }}
+      >
+        <div
+          className={`service-rows-head ${rows.length > 1 ? 'has-remove' : ''}`}
+        >
+          <span>項目名稱</span>
+          <span>所需時間</span>
+        </div>
+        <div className="service-rows-list">
+          {rows.map((item, idx) => (
+            <div className="service-input-row" key={item.id}>
+              <input
+                type="text"
+                maxLength={50}
+                required={idx === 0}
+                placeholder="輸入項目名稱"
+                value={item.name}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRows((prev) =>
+                    prev.map((r, i) => (i === idx ? { ...r, name: val } : r)),
+                  );
+                }}
+              />
+              <DurationSelect
+                value={item.duration_minutes}
+                onChange={(val) => {
+                  setRows((prev) =>
+                    prev.map((r, i) =>
+                      i === idx ? { ...r, duration_minutes: val } : r,
+                    ),
+                  );
+                }}
+              />
+              {rows.length > 1 && (
+                <button
+                  type="button"
+                  className="icon-btn service-remove-btn"
+                  aria-label="刪除此項目"
+                  title="刪除此項目"
+                  onClick={() =>
+                    setRows((prev) => prev.filter((_, i) => i !== idx))
+                  }
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="btn dashed service-add-row-btn"
+          onClick={() =>
+            setRows((prev) => [
+              ...prev,
+              {
+                id: 'new-' + Date.now() + '-' + prev.length,
+                name: '',
+                duration_minutes: 60,
+              },
+            ])
+          }
+        >
+          <Plus size={16} />
+          新增一項
+        </button>
+        <button type="submit" className="btn primary" disabled={busy}>
+          儲存項目設定 <Check size={16} />
+        </button>
+      </form>
+    </section>
   );
 }
 
@@ -621,6 +752,12 @@ export default function Studio({
   const [selected, setSelected] = useState(() => dateNow());
   const [shop, setShop] = useState<Shop | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [draftServices, setDraftServices] = useState<
+    { id: string; name: string; duration_minutes: number }[]
+  >([
+    { id: 'draft-1', name: '', duration_minutes: 60 },
+  ]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
@@ -667,11 +804,13 @@ export default function Studio({
         error?: string;
         shop: Shop | null;
         slots: Slot[];
+        services?: ServiceItem[];
       };
       if (!r.ok) throw Error(j.error || '讀取失敗');
       if (monthRef.current !== month) return;
       setShop(j.shop);
       setSlots(j.slots);
+      setServices(Array.isArray(j.services) ? j.services : []);
       if (j.shop && !editingThemeRef.current) {
         const nextTheme = parseShopTheme(j.shop.theme);
         setTheme((prev) =>
@@ -813,7 +952,7 @@ export default function Studio({
         <Brand />
         {notice}
         <div className="setup-card">
-          <span className="eyebrow">WELCOME TO YOUR LITTLE STUDIO</span>
+          <span className="eyebrow">STEP 1 OF 2 · WELCOME TO YOUR STUDIO</span>
           <Flower2 size={52} strokeWidth={1.2} />
           <h1>
             美好的開始，
@@ -827,7 +966,7 @@ export default function Studio({
               try {
                 await act(
                   { action: 'create', name: newName },
-                  '工作室已建立，來新增第一個時段吧',
+                  '工作室已建立，接著請新增你的服務項目',
                 );
               } catch {}
             }}
@@ -842,10 +981,127 @@ export default function Studio({
               />
             </label>
             <button type="submit" className="btn primary" disabled={busy}>
-              建立工作室 <ArrowRight size={18} />
+              下一步：新增項目 <ArrowRight size={18} />
             </button>
           </form>
           <small>各帳號的工作室獨立管理，客人的資料不會公開。</small>
+        </div>
+      </div>
+    );
+  }
+
+  if (shop && !customer && services.length === 0) {
+    return (
+      <div className="onboarding">
+        <Brand />
+        {notice}
+        <div className="setup-card setup-services-card">
+          <span className="eyebrow">STEP 2 OF 2 · STUDIO SERVICES</span>
+          <Flower2 size={46} strokeWidth={1.2} />
+          <h1>
+            新增你的項目，
+            <br />
+            讓時間自動為你留白。
+          </h1>
+          <p>
+            設定每個項目的時間（以 30 分鐘為單位），客人預約時系統會自動為你保留所需時段。
+          </p>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const valid = draftServices.filter((s) => s.name.trim());
+              if (!valid.length) {
+                setToast('請至少填寫一個項目名稱');
+                return;
+              }
+              try {
+                await act(
+                  { action: 'save_services', services: valid },
+                  '項目設定完成，歡迎來到管理後台！',
+                );
+              } catch {}
+            }}
+          >
+            <div
+              className={`service-rows-head ${draftServices.length > 1 ? 'has-remove' : ''}`}
+            >
+              <span>項目名稱</span>
+              <span>所需時間</span>
+            </div>
+            <div className="service-rows-list">
+              {draftServices.map((item, idx) => (
+                <div className="service-input-row" key={item.id}>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    required={idx === 0}
+                    placeholder={
+                      idx === 0
+                        ? '例如：單色凝膠'
+                        : idx === 1
+                          ? '例如：造型設計'
+                          : '輸入項目名稱'
+                    }
+                    value={item.name}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDraftServices((prev) =>
+                        prev.map((r, i) =>
+                          i === idx ? { ...r, name: val } : r,
+                        ),
+                      );
+                    }}
+                  />
+                  <DurationSelect
+                    value={item.duration_minutes}
+                    onChange={(val) => {
+                      setDraftServices((prev) =>
+                        prev.map((r, i) =>
+                          i === idx ? { ...r, duration_minutes: val } : r,
+                        ),
+                      );
+                    }}
+                  />
+                  {draftServices.length > 1 && (
+                    <button
+                      type="button"
+                      className="icon-btn service-remove-btn"
+                      aria-label="刪除此項目"
+                      title="刪除此項目"
+                      onClick={() =>
+                        setDraftServices((prev) =>
+                          prev.filter((_, i) => i !== idx),
+                        )
+                      }
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn dashed service-add-row-btn"
+              onClick={() =>
+                setDraftServices((prev) => [
+                  ...prev,
+                  {
+                    id: 'draft-' + Date.now() + '-' + prev.length,
+                    name: '',
+                    duration_minutes: 60,
+                  },
+                ])
+              }
+            >
+              <Plus size={16} />
+              新增一項
+            </button>
+            <button type="submit" className="btn primary" disabled={busy}>
+              完成設定，進入管理後台 <ArrowRight size={18} />
+            </button>
+          </form>
+          <small>進入後台後，你隨時可以在「工作室設定」中新增或調整項目。</small>
         </div>
       </div>
     );
@@ -882,9 +1138,16 @@ export default function Studio({
           </div>
         </div>
         <div className="ribbon-ticker">
-          <span>
-            {shop.name} ✿ ONLINE BOOKING ✿ 選擇理想時段・為自己留一點美好時光 ✿{' '}
-            {shop.name} ✿ ONLINE BOOKING
+          <span className="ribbon-zh">從空檔到見面，中間只差一個預約連結</span>
+          <span className="ribbon-sep" aria-hidden="true">
+            ｜
+          </span>
+          <span className="ribbon-en">
+            <span>From an open slot to “See you then!”</span>
+            <span className="ribbon-dash" aria-hidden="true">
+              {' '}—{' '}
+            </span>
+            <span>all it takes is one booking link.</span>
           </span>
         </div>
         <main className="booking-layout">
@@ -915,10 +1178,6 @@ export default function Studio({
               <span>
                 <i className="booked" />
                 已預約
-              </span>
-              <span>
-                <i className="closed" />
-                未開放
               </span>
             </div>
           </section>
@@ -969,7 +1228,7 @@ export default function Studio({
             </small>
           </aside>
         </main>
-        <footer>由 GOODTIME BOOKING STUDIO 提供預約服務</footer>
+        <footer />
         {pick && (
           <Modal
             title={
@@ -1116,10 +1375,20 @@ export default function Studio({
             <ExternalLink size={17} />
             客人預約頁
           </a>
-          <a href="/signout-with-chatgpt?return_to=%2F" target="_top">
+          <button
+            type="button"
+            onClick={async () => {
+              await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'logout' }),
+              });
+              location.href = '/';
+            }}
+          >
             <LogOut size={17} />
             登出帳號
-          </a>
+          </button>
         </div>
         <div className="sidebar-bottom">
           <div className="little-note">
@@ -1366,10 +1635,6 @@ export default function Studio({
                     <span>
                       <i className="booked" />
                       已預約
-                    </span>
-                    <span>
-                      <i className="closed" />
-                      未開放
                     </span>
                   </div>
                   <Calendar
@@ -1639,6 +1904,21 @@ export default function Studio({
                   </button>
                 </form>
               </section>
+
+              <ServicesSettingsCard
+                key={services.map((s) => `${s.id}:${s.name}:${s.duration_minutes}`).join('|')}
+                services={services}
+                busy={busy}
+                onSave={async (nextList) => {
+                  try {
+                    await act(
+                      { action: 'save_services', services: nextList },
+                      '項目設定已儲存',
+                    );
+                  } catch {}
+                }}
+              />
+
               <section className="card settings-card">
                 <span className="eyebrow">BOOKING LINK &amp; ACCESS</span>
                 <h2>你的專屬預約連結</h2>
@@ -1667,14 +1947,21 @@ export default function Studio({
                     只有目前登入的老闆帳號可管理此工作室。客人只能看到時段狀態。
                   </p>
                 </div>
-                <a
+                <button
+                  type="button"
                   className="btn"
-                  href="/signout-with-chatgpt?return_to=%2F"
-                  target="_top"
+                  onClick={async () => {
+                    await fetch('/api/auth', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'logout' }),
+                    });
+                    location.href = '/';
+                  }}
                 >
                   <LogOut size={16} />
                   登出帳號
-                </a>
+                </button>
               </section>
             </div>
           )}
@@ -2110,17 +2397,9 @@ function SlotRow({
           <button
             type="button"
             disabled={busy}
-            onClick={() => void go('close')}
+            onClick={() => void go('remove')}
           >
-            關閉時段
-          </button>
-        ) : s.status === 'closed' ? (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void go('reopen')}
-          >
-            重新開放
+            移除時段
           </button>
         ) : (
           <button

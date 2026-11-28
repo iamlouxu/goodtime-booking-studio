@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getSessionUser } from "@/lib/auth";
 
 type ShopRow = {
   id: string;
@@ -52,31 +52,18 @@ export async function GET(req: Request) {
     let owner = false;
 
     if (id) {
-      if (id === "default") {
-        shop = await db()
-          .prepare("SELECT id, name, description, theme FROM shops LIMIT 1")
-          .first<ShopRow>();
-      } else {
-        shop = await db()
-          .prepare("SELECT id, name, description, theme FROM shops WHERE id = ?")
-          .bind(id)
-          .first<ShopRow>();
-      }
+      shop = await db()
+        .prepare("SELECT id, name, description, theme FROM shops WHERE id = ?")
+        .bind(id)
+        .first<ShopRow>();
     } else {
-      const user = await getChatGPTUser();
+      const user = await getSessionUser();
       if (!user) return fail("請先登入", 401);
 
       shop = await db()
         .prepare("SELECT id, name, description, theme FROM shops WHERE owner = ?")
         .bind(user.userId)
         .first<ShopRow>();
-
-      // Fallback: if single-studio mode and a shop already exists, bind/use it
-      if (!shop) {
-        shop = await db()
-          .prepare("SELECT id, name, description, theme FROM shops LIMIT 1")
-          .first<ShopRow>();
-      }
       owner = true;
     }
 
@@ -95,8 +82,20 @@ export async function GET(req: Request) {
       .bind(shop.id, month + "-%")
       .all();
 
+    const serviceRows = await db()
+      .prepare(
+        "SELECT id, shop_id, name, duration_minutes, sort_order FROM services WHERE shop_id = ? ORDER BY sort_order ASC, id ASC",
+      )
+      .bind(shop.id)
+      .all();
+
     return Response.json(
-      { shop, slots: rows.results, serverTime: nowLocal() },
+      {
+        shop,
+        slots: rows.results,
+        services: serviceRows.results,
+        serverTime: nowLocal(),
+      },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
@@ -161,7 +160,7 @@ export async function POST(req: Request) {
     }
 
     // Studio owner actions (requires admin login)
-    const user = await getChatGPTUser();
+    const user = await getSessionUser();
     if (!user) return fail("請先登入管理員帳號", 401);
 
     if (b.action === "create") {
@@ -183,14 +182,11 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    let shop = await db()
+    const shop = await db()
       .prepare("SELECT id FROM shops WHERE owner = ?")
       .bind(user.userId)
       .first<{ id: string }>();
 
-    if (!shop) {
-      shop = await db().prepare("SELECT id FROM shops LIMIT 1").first<{ id: string }>();
-    }
     if (!shop) return fail("請先建立工作室", 404);
 
     if (b.action === "settings") {
@@ -203,6 +199,55 @@ export async function POST(req: Request) {
         .prepare("UPDATE shops SET name = ?, description = ? WHERE id = ?")
         .bind(name, desc, shop.id)
         .run();
+      return Response.json({ ok: true });
+    }
+
+    if (b.action === "save_services") {
+      const rawList = Array.isArray(b.services) ? b.services : [];
+      const cleaned: { id: string; name: string; duration_minutes: number }[] = [];
+
+      for (const item of rawList) {
+        if (!item || typeof item !== "object") continue;
+        const name = String(item.name || "").trim();
+        const duration = Number(item.duration_minutes);
+        if (!name) continue;
+        if (name.length > 50) return fail("項目名稱限 50 字內");
+        if (
+          !Number.isInteger(duration) ||
+          duration < 30 ||
+          duration > 480 ||
+          duration % 30 !== 0
+        ) {
+          return fail("項目時間需為 30 分鐘為單位（30～480 分鐘）");
+        }
+        cleaned.push({
+          id:
+            typeof item.id === "string" && item.id.trim()
+              ? item.id.trim()
+              : crypto.randomUUID(),
+          name,
+          duration_minutes: duration,
+        });
+      }
+
+      if (!cleaned.length) {
+        return fail("請至少新增一個項目");
+      }
+      if (cleaned.length > 30) {
+        return fail("項目數量上限為 30 個");
+      }
+
+      await db().batch([
+        db().prepare("DELETE FROM services WHERE shop_id = ?").bind(shop.id),
+        ...cleaned.map((s, idx) =>
+          db()
+            .prepare(
+              "INSERT INTO services (id, shop_id, name, duration_minutes, sort_order) VALUES (?, ?, ?, ?, ?)",
+            )
+            .bind(s.id, shop.id, s.name, s.duration_minutes, idx),
+        ),
+      ]);
+
       return Response.json({ ok: true });
     }
 
@@ -261,10 +306,23 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
+    if (b.action === "close" || b.action === "remove") {
+      const r = await db()
+        .prepare(
+          "DELETE FROM slots WHERE id = ? AND shop_id = ? AND status IN ('open', 'closed')",
+        )
+        .bind(String(b.slotId), shop.id)
+        .run();
+
+      if (!r.meta.changes) {
+        return fail("時段狀態已更新，請重新整理", 409);
+      }
+      return Response.json({ ok: true });
+    }
+
     const map: Record<string, [string, string[]]> = {
       confirm: ["booked", ["pending"]],
       reject: ["open", ["pending"]],
-      close: ["closed", ["open"]],
       reopen: ["open", ["closed"]],
       cancel: ["open", ["booked"]],
     };
