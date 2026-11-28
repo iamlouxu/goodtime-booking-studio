@@ -548,8 +548,16 @@ function Welcome() {
         </div>
       </div>
       <div className="ribbon-ticker">
-        <span>
-          從空檔到見面，中間只差一個預約連結｜From an open slot to “See you then!” — all it takes is one booking link.
+        <span className="ribbon-zh">從空檔到見面，中間只差一個預約連結</span>
+        <span className="ribbon-sep" aria-hidden="true">
+          ｜
+        </span>
+        <span className="ribbon-en">
+          <span>From an open slot to “See you then!”</span>
+          <span className="ribbon-dash" aria-hidden="true">
+            {' '}—{' '}
+          </span>
+          <span>all it takes is one booking link.</span>
         </span>
       </div>
     </div>
@@ -1130,8 +1138,16 @@ export default function Studio({
           </div>
         </div>
         <div className="ribbon-ticker">
-          <span>
-            從空檔到見面，中間只差一個預約連結｜From an open slot to “See you then!” — all it takes is one booking link.
+          <span className="ribbon-zh">從空檔到見面，中間只差一個預約連結</span>
+          <span className="ribbon-sep" aria-hidden="true">
+            ｜
+          </span>
+          <span className="ribbon-en">
+            <span>From an open slot to “See you then!”</span>
+            <span className="ribbon-dash" aria-hidden="true">
+              {' '}—{' '}
+            </span>
+            <span>all it takes is one booking link.</span>
           </span>
         </div>
         <main className="booking-layout">
