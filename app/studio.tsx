@@ -371,7 +371,6 @@ function Brand() {
       <span>
         GOODTIME<small>BOOKING STUDIO</small>
       </span>
-      <ChevronDown size={15} className="brand-chevron" />
     </Link>
   );
 }

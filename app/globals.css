@@ -290,7 +290,9 @@ label > span {
 
 .brand small {
   display: block;
+  text-align: center;
   letter-spacing: 1.6px;
+  text-indent: 1.6px;
   font-size: 8px;
   font-weight: 600;
   margin-top: 2px;
@@ -2308,9 +2310,9 @@ button.stat-card:hover {
   justify-content: center;
   text-align: center;
   font-family: 'Cormorant Garamond', 'Noto Serif TC', serif;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 2.2px;
+  letter-spacing: 2px;
   color: var(--green);
   overflow: hidden;
 }
