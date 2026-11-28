@@ -52,6 +52,16 @@ type Shop = {
   theme?: string | null;
 };
 
+type ServiceItem = {
+  id: string;
+  shop_id?: string;
+  name: string;
+  duration_minutes: number;
+  sort_order?: number;
+};
+
+const DURATION_OPTIONS = [30, 60, 90, 120, 150, 180, 210, 240];
+
 type ThemeColors = {
   primary: string;
   accent: string;
@@ -551,6 +561,120 @@ function Welcome() {
   );
 }
 
+function ServicesSettingsCard({
+  services,
+  busy,
+  onSave,
+}: {
+  services: ServiceItem[];
+  busy: boolean;
+  onSave: (list: { id: string; name: string; duration_minutes: number }[]) => Promise<void>;
+}) {
+  const [rows, setRows] = useState<
+    { id: string; name: string; duration_minutes: number }[]
+  >(() =>
+    services.length
+      ? services.map((s) => ({
+          id: s.id,
+          name: s.name,
+          duration_minutes: s.duration_minutes,
+        }))
+      : [{ id: 'new-1', name: '', duration_minutes: 60 }],
+  );
+
+  return (
+    <section className="card settings-card services-settings-card">
+      <span className="eyebrow">STUDIO SERVICES</span>
+      <h2>項目與時間設定</h2>
+      <p className="muted">
+        設定工作室提供的項目與時間（以 30 分鐘為單位），客人預約時將可選擇項目。
+      </p>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const valid = rows.filter((r) => r.name.trim());
+          if (!valid.length) return;
+          await onSave(valid);
+        }}
+      >
+        <div className="service-rows-head">
+          <span>項目名稱</span>
+          <span>所需時間</span>
+        </div>
+        <div className="service-rows-list">
+          {rows.map((item, idx) => (
+            <div className="service-input-row" key={item.id}>
+              <input
+                type="text"
+                maxLength={50}
+                required={idx === 0}
+                placeholder="輸入項目名稱"
+                value={item.name}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRows((prev) =>
+                    prev.map((r, i) => (i === idx ? { ...r, name: val } : r)),
+                  );
+                }}
+              />
+              <select
+                value={item.duration_minutes}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setRows((prev) =>
+                    prev.map((r, i) =>
+                      i === idx ? { ...r, duration_minutes: val } : r,
+                    ),
+                  );
+                }}
+              >
+                {DURATION_OPTIONS.map((mins) => (
+                  <option key={mins} value={mins}>
+                    {mins} 分鐘
+                  </option>
+                ))}
+              </select>
+              {rows.length > 1 && (
+                <button
+                  type="button"
+                  className="icon-btn service-remove-btn"
+                  aria-label="刪除此項目"
+                  title="刪除此項目"
+                  onClick={() =>
+                    setRows((prev) => prev.filter((_, i) => i !== idx))
+                  }
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="btn dashed service-add-row-btn"
+          onClick={() =>
+            setRows((prev) => [
+              ...prev,
+              {
+                id: 'new-' + Date.now() + '-' + prev.length,
+                name: '',
+                duration_minutes: 60,
+              },
+            ])
+          }
+        >
+          <Plus size={16} />
+          新增一項
+        </button>
+        <button type="submit" className="btn primary" disabled={busy}>
+          儲存項目設定 <Check size={16} />
+        </button>
+      </form>
+    </section>
+  );
+}
+
 export default function Studio({
   signedIn,
   shopId,
@@ -563,6 +687,12 @@ export default function Studio({
   const [selected, setSelected] = useState(() => dateNow());
   const [shop, setShop] = useState<Shop | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [draftServices, setDraftServices] = useState<
+    { id: string; name: string; duration_minutes: number }[]
+  >([
+    { id: 'draft-1', name: '', duration_minutes: 60 },
+  ]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
@@ -609,11 +739,13 @@ export default function Studio({
         error?: string;
         shop: Shop | null;
         slots: Slot[];
+        services?: ServiceItem[];
       };
       if (!r.ok) throw Error(j.error || '讀取失敗');
       if (monthRef.current !== month) return;
       setShop(j.shop);
       setSlots(j.slots);
+      setServices(Array.isArray(j.services) ? j.services : []);
       if (j.shop && !editingThemeRef.current) {
         const nextTheme = parseShopTheme(j.shop.theme);
         setTheme((prev) =>
@@ -755,7 +887,7 @@ export default function Studio({
         <Brand />
         {notice}
         <div className="setup-card">
-          <span className="eyebrow">WELCOME TO YOUR LITTLE STUDIO</span>
+          <span className="eyebrow">STEP 1 OF 2 · WELCOME TO YOUR STUDIO</span>
           <Flower2 size={52} strokeWidth={1.2} />
           <h1>
             美好的開始，
@@ -769,7 +901,7 @@ export default function Studio({
               try {
                 await act(
                   { action: 'create', name: newName },
-                  '工作室已建立，來新增第一個時段吧',
+                  '工作室已建立，接著請新增你的服務項目',
                 );
               } catch {}
             }}
@@ -784,10 +916,132 @@ export default function Studio({
               />
             </label>
             <button type="submit" className="btn primary" disabled={busy}>
-              建立工作室 <ArrowRight size={18} />
+              下一步：新增項目 <ArrowRight size={18} />
             </button>
           </form>
           <small>各帳號的工作室獨立管理，客人的資料不會公開。</small>
+        </div>
+      </div>
+    );
+  }
+
+  if (shop && !customer && services.length === 0) {
+    return (
+      <div className="onboarding">
+        <Brand />
+        {notice}
+        <div className="setup-card setup-services-card">
+          <span className="eyebrow">STEP 2 OF 2 · STUDIO SERVICES</span>
+          <Flower2 size={46} strokeWidth={1.2} />
+          <h1>
+            新增你的項目，
+            <br />
+            讓時間自動為你留白。
+          </h1>
+          <p>
+            設定每個項目的時間（以 30 分鐘為單位），客人預約時系統會自動為你保留所需時段。
+          </p>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const valid = draftServices.filter((s) => s.name.trim());
+              if (!valid.length) {
+                setToast('請至少填寫一個項目名稱');
+                return;
+              }
+              try {
+                await act(
+                  { action: 'save_services', services: valid },
+                  '項目設定完成，歡迎來到管理後台！',
+                );
+              } catch {}
+            }}
+          >
+            <div className="service-rows-head">
+              <span>項目名稱</span>
+              <span>所需時間</span>
+            </div>
+            <div className="service-rows-list">
+              {draftServices.map((item, idx) => (
+                <div className="service-input-row" key={item.id}>
+                  <input
+                    type="text"
+                    maxLength={50}
+                    required={idx === 0}
+                    placeholder={
+                      idx === 0
+                        ? '例如：單色凝膠'
+                        : idx === 1
+                          ? '例如：造型設計'
+                          : '輸入項目名稱'
+                    }
+                    value={item.name}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDraftServices((prev) =>
+                        prev.map((r, i) =>
+                          i === idx ? { ...r, name: val } : r,
+                        ),
+                      );
+                    }}
+                  />
+                  <select
+                    value={item.duration_minutes}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setDraftServices((prev) =>
+                        prev.map((r, i) =>
+                          i === idx ? { ...r, duration_minutes: val } : r,
+                        ),
+                      );
+                    }}
+                  >
+                    {DURATION_OPTIONS.map((mins) => (
+                      <option key={mins} value={mins}>
+                        {mins} 分鐘
+                      </option>
+                    ))}
+                  </select>
+                  {draftServices.length > 1 && (
+                    <button
+                      type="button"
+                      className="icon-btn service-remove-btn"
+                      aria-label="刪除此項目"
+                      title="刪除此項目"
+                      onClick={() =>
+                        setDraftServices((prev) =>
+                          prev.filter((_, i) => i !== idx),
+                        )
+                      }
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn dashed service-add-row-btn"
+              onClick={() =>
+                setDraftServices((prev) => [
+                  ...prev,
+                  {
+                    id: 'draft-' + Date.now() + '-' + prev.length,
+                    name: '',
+                    duration_minutes: 60,
+                  },
+                ])
+              }
+            >
+              <Plus size={16} />
+              新增一項
+            </button>
+            <button type="submit" className="btn primary" disabled={busy}>
+              完成設定，進入管理後台 <ArrowRight size={18} />
+            </button>
+          </form>
+          <small>進入後台後，你隨時可以在「工作室設定」中新增或調整項目。</small>
         </div>
       </div>
     );
@@ -1591,6 +1845,21 @@ export default function Studio({
                   </button>
                 </form>
               </section>
+
+              <ServicesSettingsCard
+                key={services.map((s) => `${s.id}:${s.name}:${s.duration_minutes}`).join('|')}
+                services={services}
+                busy={busy}
+                onSave={async (nextList) => {
+                  try {
+                    await act(
+                      { action: 'save_services', services: nextList },
+                      '項目設定已儲存',
+                    );
+                  } catch {}
+                }}
+              />
+
               <section className="card settings-card">
                 <span className="eyebrow">BOOKING LINK &amp; ACCESS</span>
                 <h2>你的專屬預約連結</h2>

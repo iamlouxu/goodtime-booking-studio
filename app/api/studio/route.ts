@@ -82,8 +82,20 @@ export async function GET(req: Request) {
       .bind(shop.id, month + "-%")
       .all();
 
+    const serviceRows = await db()
+      .prepare(
+        "SELECT id, shop_id, name, duration_minutes, sort_order FROM services WHERE shop_id = ? ORDER BY sort_order ASC, id ASC",
+      )
+      .bind(shop.id)
+      .all();
+
     return Response.json(
-      { shop, slots: rows.results, serverTime: nowLocal() },
+      {
+        shop,
+        slots: rows.results,
+        services: serviceRows.results,
+        serverTime: nowLocal(),
+      },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
@@ -187,6 +199,55 @@ export async function POST(req: Request) {
         .prepare("UPDATE shops SET name = ?, description = ? WHERE id = ?")
         .bind(name, desc, shop.id)
         .run();
+      return Response.json({ ok: true });
+    }
+
+    if (b.action === "save_services") {
+      const rawList = Array.isArray(b.services) ? b.services : [];
+      const cleaned: { id: string; name: string; duration_minutes: number }[] = [];
+
+      for (const item of rawList) {
+        if (!item || typeof item !== "object") continue;
+        const name = String(item.name || "").trim();
+        const duration = Number(item.duration_minutes);
+        if (!name) continue;
+        if (name.length > 50) return fail("項目名稱限 50 字內");
+        if (
+          !Number.isInteger(duration) ||
+          duration < 30 ||
+          duration > 480 ||
+          duration % 30 !== 0
+        ) {
+          return fail("項目時間需為 30 分鐘為單位（30～480 分鐘）");
+        }
+        cleaned.push({
+          id:
+            typeof item.id === "string" && item.id.trim()
+              ? item.id.trim()
+              : crypto.randomUUID(),
+          name,
+          duration_minutes: duration,
+        });
+      }
+
+      if (!cleaned.length) {
+        return fail("請至少新增一個項目");
+      }
+      if (cleaned.length > 30) {
+        return fail("項目數量上限為 30 個");
+      }
+
+      await db().batch([
+        db().prepare("DELETE FROM services WHERE shop_id = ?").bind(shop.id),
+        ...cleaned.map((s, idx) =>
+          db()
+            .prepare(
+              "INSERT INTO services (id, shop_id, name, duration_minutes, sort_order) VALUES (?, ?, ?, ?, ?)",
+            )
+            .bind(s.id, shop.id, s.name, s.duration_minutes, idx),
+        ),
+      ]);
+
       return Response.json({ ok: true });
     }
 
